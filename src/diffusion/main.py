@@ -3,6 +3,7 @@ import torch
 from diffusers import StableDiffusionPipeline
 from PIL import Image
 import os
+import argparse
 
 def setup_stable_diffusion(model_id="runwayml/stable-diffusion-v1-5", output_dir="./generated_images"):
     """
@@ -15,9 +16,18 @@ def setup_stable_diffusion(model_id="runwayml/stable-diffusion-v1-5", output_dir
     os.makedirs(output_dir, exist_ok=True)
     
     # Check if CUDA is available and set device
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    print(f"Using device: {device}")
-    
+
+    if torch.backends.mps.is_available():
+        device = torch.device("mps")
+        print("Using MPS (Apple Silicon GPU)")
+    elif torch.cuda.is_available():
+        device = torch.device("cuda")
+        print("Using CUDA (NVIDIA GPU)")
+    else:
+        device = torch.device("cpu")
+        print("Using CPU")
+
+   
     # Load the pipeline
     pipe = StableDiffusionPipeline.from_pretrained(
         model_id,
@@ -49,6 +59,8 @@ def generate_image(pipe, prompt, output_dir="./generated_images", num_inference_
     image.save(output_path)
     print(f"Image saved to: {output_path}")
     return image
+
+
 def generate_ghibli_image(
     pipe,
     subject_prompt,
@@ -100,13 +112,25 @@ def generate_ghibli_image(
 
 # Example usage
 if __name__ == "__main__":
+
+    # Arguments
+    parser = argparse.ArgumentParser(description="Generate images using stable diffusion")
+    parser.add_argument("--scene", action="store_true", help="Enable scene mode")
+    parser.add_argument("--ghibli", action="store_true", help="Enable ghibli mode")
+    args = parser.parse_args()
+    print("Arguments:", vars(args))
+    if args.ghibli:
+        model_id = "nitrosocke/Ghibli-Diffusion"
+    else:
+        model_id = "runwayml/stable-diffusion-v1-5"
+
     # Setup the model
-    pipe = setup_stable_diffusion(model_id="nitrosocke/Ghibli-Diffusion", output_dir="./ghibli_art")
-    SCENE = True
-    SIMPLE_PROMPT = False
+    pipe = setup_stable_diffusion(model_id=model_id, output_dir="./ghibli_art")
+    SCENE = args.scene
+    SIMPLE_PROMPT = not args.scene
     if SIMPLE_PROMPT:
         # Generate an image
-        prompt = "a beautiful sunset over mountains, hyperrealistic, 4k"
+        prompt = "a beautiful sunset over mountains, hyperrealistic"
         print(prompt)
         generate_image(pipe, prompt)
     elif SCENE:
