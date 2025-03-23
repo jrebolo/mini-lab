@@ -117,30 +117,35 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate images using stable diffusion")
     parser.add_argument("--scene", action="store_true", help="Enable scene mode")
     parser.add_argument("--ghibli", action="store_true", help="Enable ghibli mode")
+    parser.add_argument("--dragons", action="store_true", help="Enable dragons mode")
+    parser.add_argument("--prompt",  type=str, default="a beautiful sunset over mountains, hyperrealistic", help="Make a prompt to use")
+
     args = parser.parse_args()
     print("Arguments:", vars(args))
     if args.ghibli:
         model_id = "nitrosocke/Ghibli-Diffusion"
+    elif args.dragons:
+        model_id = "Lykon/dreamshaper-8"
     else:
         model_id = "runwayml/stable-diffusion-v1-5"
 
     # Setup the model
-    pipe = setup_stable_diffusion(model_id=model_id, output_dir="./ghibli_art")
-    SCENE = args.scene
-    SIMPLE_PROMPT = not args.scene
-    if SIMPLE_PROMPT:
+    
+
+    if not args.scene:
         # Generate an image
-        prompt = "a beautiful sunset over mountains, hyperrealistic"
+        prompt = args.prompt
         print(prompt)
+        pipe = setup_stable_diffusion(model_id=model_id, output_dir="./generated_images")
         generate_image(pipe, prompt)
-    elif SCENE:
+    elif args.scene:
         scenes = [
         "a young witch flying on a broomstick over a peaceful coastal town",
         "a magical forest spirit sitting under a giant tree",
         "a cozy countryside house with a vegetable garden",
         "a cat sleeping on a windowsill of a bakery"
         ]
-    
+        pipe = setup_stable_diffusion(model_id=model_id, output_dir="./ghibli_art")
         # Generate multiple scenes
         for scene in scenes:
             generate_ghibli_image(pipe, scene)
